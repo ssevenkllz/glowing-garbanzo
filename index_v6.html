@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>wdywd</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f4f3ef; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 2rem; }
+    .card { background: #fff; border: 1px solid #e0deda; border-radius: 14px; padding: 2rem; width: 100%; max-width: 480px; }
+    h2 { font-size: 1.1rem; font-weight: 500; margin-bottom: 1.5rem; color: #1a1a1a; }
+    .field { margin-bottom: 1.25rem; }
+    .label { font-size: 12px; color: #888; margin-bottom: 6px; display: block; }
+    .geo-row { display: flex; align-items: center; gap: 10px; }
+    .toggle-wrap { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+    .toggle-wrap input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; inset: 0; background: #d0cfc9; border-radius: 22px; transition: background 0.2s; }
+    .slider:before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: transform 0.2s; }
+    .toggle-wrap input:checked + .slider { background: #1D9E75; }
+    .toggle-wrap input:checked + .slider:before { transform: translateX(18px); }
+    .geo-label { font-size: 14px; color: #1a1a1a; }
+    .geo-result { margin-top: 10px; font-size: 13px; color: #666; background: #f8f7f4; border-radius: 8px; padding: 10px 12px; line-height: 1.7; display: none; }
+    .geo-result.visible { display: block; }
+    .geo-err { color: #c0392b; }
+    select { width: 100%; font-size: 14px; padding: 8px 10px; border: 1px solid #d0cfc9; border-radius: 8px; background: #fff; color: #1a1a1a; appearance: none; cursor: pointer; }
+    select:focus { outline: 2px solid #1D9E75; outline-offset: 1px; }
+
+    .filters { border-top: 1px solid #f0efeb; margin-top: 1rem; padding-top: 1rem; display: flex; flex-direction: column; gap: 10px; }
+    .filter-row { display: flex; align-items: center; justify-content: space-between; }
+    .filter-label { font-size: 13px; color: #444; }
+    .filter-sub { font-size: 11px; color: #aaa; margin-top: 1px; }
+
+    .go-btn { width: 100%; margin-top: 1.25rem; padding: 11px; font-size: 15px; font-weight: 500; background: #fff; border: 1px solid #c0bfba; border-radius: 8px; cursor: pointer; color: #1a1a1a; transition: background 0.15s, transform 0.1s; }
+    .go-btn:hover:not(:disabled) { background: #f4f3ef; }
+    .go-btn:active:not(:disabled) { transform: scale(0.98); }
+    .go-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .error-msg { margin-top: 1rem; font-size: 13px; color: #c0392b; background: #fdf0f0; border-radius: 8px; padding: 10px 12px; display: none; }
+    .error-msg.visible { display: block; }
+
+    .results-wrap { width: 100%; max-width: 700px; margin-top: 2rem; display: none; }
+    .results-wrap.visible { display: block; }
+    .results-label { font-size: 13px; font-weight: 500; color: #888; margin-bottom: 0.75rem; }
+    .place-card { background: #fff; border: 1px solid #e0deda; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+    .place-name { font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+    .place-address { font-size: 13px; color: #666; margin-bottom: 8px; }
+    .place-phone { font-size: 13px; color: #1D9E75; margin-bottom: 8px; }
+    .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .badge { font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 500; }
+    .badge-green { background: #e8f5f0; color: #0f6e56; }
+    .badge-rating { background: #fff8e6; color: #b8860b; }
+    .badge-late { background: #1a1a1a; color: #fff; }
+    .hours { font-size: 12px; color: #888; line-height: 1.8; border-top: 1px solid #f0efeb; padding-top: 10px; margin-top: 4px; }
+    .hours summary { cursor: pointer; font-weight: 500; color: #555; font-size: 12px; margin-bottom: 4px; }
+    .no-results { font-size: 14px; color: #888; text-align: center; padding: 2rem; background: #fff; border-radius: 12px; border: 1px solid #e0deda; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>what do you want to do?</h2>
+
+    <div class="field">
+      <span class="label">share my location</span>
+      <div class="geo-row">
+        <label class="toggle-wrap">
+          <input type="checkbox" id="geo-toggle">
+          <span class="slider"></span>
+        </label>
+        <span class="geo-label" id="geo-label-text">off</span>
+      </div>
+      <div class="geo-result" id="geo-result"></div>
+    </div>
+
+    <div class="field">
+      <label class="label" for="wdywd">i want to...</label>
+      <select id="wdywd">
+        <option value="" disabled selected>choose one</option>
+        <option value="eat">eat</option>
+        <option value="drink">drink</option>
+        <option value="play">play</option>
+      </select>
+    </div>
+
+    <div class="filters">
+      <div class="filter-row">
+        <div>
+          <div class="filter-label">open now?</div>
+          <div class="filter-sub">based on your local time</div>
+        </div>
+        <label class="toggle-wrap">
+          <input type="checkbox" id="open-now-toggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="filter-row">
+        <div>
+          <div class="filter-label">late night hrs?</div>
+          <div class="filter-sub">open past 10 PM any day</div>
+        </div>
+        <label class="toggle-wrap">
+          <input type="checkbox" id="late-night-toggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="filter-row">
+        <div>
+          <div class="filter-label">sort by distance?</div>
+          <div class="filter-sub">nearest to you first</div>
+        </div>
+        <label class="toggle-wrap">
+          <input type="checkbox" id="radius-toggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <button class="go-btn" id="go-btn" disabled>go</button>
+    <div class="error-msg" id="error-msg"></div>
+  </div>
+
+  <div class="results-wrap" id="results-wrap">
+    <div class="results-label" id="results-label"></div>
+    <div id="results-body"></div>
+  </div>
+
+  <script>
+    const toggle = document.getElementById('geo-toggle');
+    const labelText = document.getElementById('geo-label-text');
+    const geoResult = document.getElementById('geo-result');
+    const wdywd = document.getElementById('wdywd');
+    const goBtn = document.getElementById('go-btn');
+    const errorMsg = document.getElementById('error-msg');
+    const resultsWrap = document.getElementById('results-wrap');
+    const resultsLabel = document.getElementById('results-label');
+    const resultsBody = document.getElementById('results-body');
+    const openNowToggle = document.getElementById('open-now-toggle');
+    const lateNightToggle = document.getElementById('late-night-toggle');
+    const radiusToggle = document.getElementById('radius-toggle');
+
+    let geoData = null;
+
+    const BACKEND = 'https://glowing-garbanzo-gmb0.onrender.com';
+
+    function checkReady() {
+      goBtn.disabled = !(wdywd.value && (toggle.checked ? geoData !== null : true));
+    }
+
+    toggle.addEventListener('change', () => {
+      if (toggle.checked) {
+        labelText.textContent = 'locating...';
+        geoResult.className = 'geo-result visible';
+        geoResult.innerHTML = 'getting your location...';
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const { latitude: lat, longitude: lon } = pos.coords;
+            const now = new Date();
+            geoData = { lat, lon, timestamp: now.toISOString() };
+            labelText.textContent = 'on';
+            geoResult.innerHTML =
+              `lat: <strong>${lat.toFixed(5)}</strong><br>` +
+              `lon: <strong>${lon.toFixed(5)}</strong><br>` +
+              `time: <strong>${now.toLocaleString()}</strong>`;
+            checkReady();
+          },
+          () => {
+            labelText.textContent = 'denied';
+            geoResult.innerHTML = '<span class="geo-err">location access denied</span>';
+            toggle.checked = false;
+            geoData = null;
+            checkReady();
+          }
+        );
+      } else {
+        labelText.textContent = 'off';
+        geoResult.className = 'geo-result';
+        geoData = null;
+        checkReady();
+      }
+    });
+
+    wdywd.addEventListener('change', checkReady);
+
+    goBtn.addEventListener('click', async () => {
+      goBtn.disabled = true;
+      goBtn.textContent = 'querying...';
+      errorMsg.className = 'error-msg';
+      resultsWrap.className = 'results-wrap';
+
+      const payload = {
+        choice: wdywd.value,
+        lat: geoData ? geoData.lat : null,
+        lon: geoData ? geoData.lon : null,
+        timestamp: geoData ? geoData.timestamp : new Date().toISOString(),
+        utc_offset: -new Date().getTimezoneOffset(),
+        locale: 'LFK',
+        open_now: openNowToggle.checked,
+        late_night: lateNightToggle.checked,
+        sort_by_radius: radiusToggle.checked,
+      };
+
+      try {
+        const res = await fetch(`${BACKEND}/query`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+
+        resultsBody.innerHTML = '';
+
+        if (data.count === 0) {
+          resultsBody.innerHTML = '<div class="no-results">no results matched your filters — try loosening them up!</div>';
+        } else {
+          data.results.forEach(r => {
+            const serviceBadges = [
+              r.dine_in ? '<span class="badge badge-green">dine in</span>' : '',
+              r.takeout ? '<span class="badge badge-green">takeout</span>' : '',
+              r.delivery ? '<span class="badge badge-green">delivery</span>' : '',
+            ].filter(Boolean).join('');
+
+            const ratingBadge = r.rating
+              ? `<span class="badge badge-rating">★ ${r.rating}</span>`
+              : '';
+
+            const lateBadge = lateNightToggle.checked
+              ? '<span class="badge badge-late">late night</span>'
+              : '';
+
+            const hoursHtml = r.hours && r.hours.length
+              ? `<details class="hours">
+                  <summary>hours</summary>
+                  ${r.hours.map(h => `<div>${h}</div>`).join('')}
+                 </details>`
+              : '';
+
+            const card = document.createElement('div');
+            card.className = 'place-card';
+            card.innerHTML = `
+              <div class="place-name">${r.name || '—'}</div>
+              <div class="place-address">${r.address || '—'}</div>
+              ${r.phone ? `<div class="place-phone">${r.phone}</div>` : ''}
+              <div class="badges">${ratingBadge}${lateBadge}${serviceBadges}</div>
+              ${hoursHtml}
+            `;
+            resultsBody.appendChild(card);
+          });
+        }
+
+        const filterTags = [];
+        if (payload.open_now) filterTags.push('open now');
+        if (payload.late_night) filterTags.push('late night');
+        if (payload.sort_by_radius) filterTags.push('nearest first');
+        const filterStr = filterTags.length ? ` · ${filterTags.join(' · ')}` : '';
+
+        resultsLabel.textContent = `${data.count} result${data.count !== 1 ? 's' : ''} for "${data.choice}" in ${data.locale}${filterStr}`;
+        resultsWrap.className = 'results-wrap visible';
+
+      } catch (err) {
+        errorMsg.textContent = 'could not reach backend: ' + err.message;
+        errorMsg.className = 'error-msg visible';
+      } finally {
+        goBtn.disabled = false;
+        goBtn.textContent = 'go';
+        checkReady();
+      }
+    });
+  </script>
+</body>
+</html>
