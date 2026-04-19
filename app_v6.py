@@ -218,7 +218,7 @@ Always be helpful, warm, and human. You are reducing traveler stress, not adding
 
     # Call Anthropic API
     payload = pyjson.dumps({
-        "model": "claude-sonnet-4-20250514",
+        "model": "claude-sonnet-4-5",
         "max_tokens": 1024,
         "system": system_prompt,
         "messages": messages,
